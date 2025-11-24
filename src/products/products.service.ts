@@ -29,9 +29,10 @@ export class ProductsService  {
 
     const lastPage = Math.ceil( totalPage / limit );
     return {
-      data : await this.prisma.product.findMany({
-      skip : (page -1) * limit,
-      take : limit
+      data  : await this.prisma.product.findMany({
+      skip  : (page -1) * limit,
+      take  : limit,
+      where : {available : true},
     }),
     meta : {
       total    : totalPage,
@@ -43,7 +44,7 @@ export class ProductsService  {
 
   async findOne(id: number) {
     
-    const product =  await this.prisma.product.findUnique({ where:{id} })
+    const product =  await this.prisma.product.findUnique({ where:{id , available : true} })
 
     if(!product)
     {
@@ -53,11 +54,30 @@ export class ProductsService  {
     return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+    
+    await this.findOne(id);
+    
+    return this.prisma.product.update({
+      where: {id},
+      data : updateProductDto,
+    })
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: number) {
+    await this.findOne(id);
+
+    // return this.prisma.product.delete({
+    //   where: {id}
+    // });
+    
+    const product = this.prisma.product.update({
+      where: { id },
+      data: { 
+        available: false 
+      }
+    });
+   
+    return product;
   }
 }
