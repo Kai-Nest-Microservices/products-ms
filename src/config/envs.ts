@@ -14,7 +14,6 @@ const envsSchema = joi.object({
     NATS_SERVER : joi.array().items( joi.string().required() )
 }).unknown(true);
 
-
 const { error, value } = envsSchema.validate( {
     ...process.env,
     NATS_SERVERS : process.env.NATS_SERVERS?.split(',')
