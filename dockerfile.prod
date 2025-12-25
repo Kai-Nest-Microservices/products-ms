@@ -1,0 +1,55 @@
+# Dependencias
+FROM node:22-alpine3.19 AS deps
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY package-lock.json ./
+
+RUN npm install
+
+# Stage para compilar código
+FROM node:22-alpine3.19 AS build
+
+WORKDIR /usr/src/app
+
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY . .
+
+RUN npm run build
+
+# Stage separada para deps de producción
+FROM node:22-alpine3.19 AS prod-deps
+
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY package-lock.json ./
+
+RUN npm ci --only=production && npm cache clean --force
+
+COPY --from=build /usr/src/app/prisma ./prisma
+RUN npx prisma generate
+
+# Imagen final
+FROM node:22-alpine3.19 AS prod
+
+WORKDIR /usr/src/app
+
+# Copiar node_modules de prod-deps (con Prisma)
+COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
+
+# Copiar código compilado de build
+COPY --from=build /usr/src/app/dist ./dist
+
+# Copiar schema de Prisma
+COPY --from=build /usr/src/app/prisma ./prisma
+
+ENV NODE_ENV=production
+
+USER node
+
+EXPOSE 3000
+
+CMD [ "node", "dist/src/main.js" ]
