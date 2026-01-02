@@ -34,6 +34,9 @@ COPY package-lock.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=build /usr/src/app/prisma ./prisma
+
+COPY --from=build /usr/src/app/prisma.config.ts ./prisma.config.ts
+
 RUN npx prisma generate
 
 # Imagen final
