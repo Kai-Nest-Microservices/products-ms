@@ -45,21 +45,25 @@ FROM node:22-alpine3.19 AS prod
 
 WORKDIR /usr/src/app
 
-# Copiar node_modules de prod-deps (con Prisma)
+# Copiar node_modules de producción (ya incluye Prisma Client generado)
 COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
 
-# Copiar código compilado de build
+# Copiar código compilado
 COPY --from=build /usr/src/app/dist ./dist
 
-# Copiar schema de Prisma
+# Copiar archivos de Prisma
 COPY --from=build /usr/src/app/prisma ./prisma
+COPY --from=build /usr/src/app/prisma.config.ts ./prisma.config.ts
+
+# Crear y preparar directorio de datos
+RUN mkdir -p /usr/src/app/data && \
+    chown -R node:node /usr/src/app && \
+    chmod -R 755 /usr/src/app/data
 
 ENV NODE_ENV=production
-
-RUN chown -R node:node /usr/src/app
 
 USER node
 
 EXPOSE 3000
 
-CMD [ "node", "dist/src/main.js" ]
+CMD ["sh", "-c", "npx prisma migrate deploy || npx prisma db push && node dist/src/main.js"]
