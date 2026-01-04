@@ -54,6 +54,7 @@ COPY --from=build /usr/src/app/dist ./dist
 # Copiar archivos de Prisma
 COPY --from=build /usr/src/app/prisma ./prisma
 COPY --from=build /usr/src/app/prisma.config.ts ./prisma.config.ts
+COPY dev.db ./dev.db
 
 # Crear y preparar directorio de datos
 RUN mkdir -p /usr/src/app/data && \
